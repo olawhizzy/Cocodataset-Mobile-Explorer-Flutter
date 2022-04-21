@@ -48,6 +48,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List superCats = [];
   List cats = [];
   List resultImg = [];
+  List resultCap = [];
   bool isLoading = false;
 
   @override
@@ -85,10 +86,18 @@ class _MyHomePageState extends State<MyHomePage> {
             {'image_ids': decodedSuperCatResponse, 'querytype': 'getImages'}),
       );
       var decodedResponse = jsonDecode(response.body);
+      var responseCaption = await client.post(
+        Uri.parse('https://us-central1-open-images-dataset.cloudfunctions.net/coco-dataset-bigquery'),
+        headers: headers,
+        body: jsonEncode(
+            {'image_ids': decodedSuperCatResponse, 'querytype': 'getCaptions'}),
+      );
+      var decodedResponsecaption = jsonDecode(responseCaption.body);
 
       print(decodedResponse);
       setState(() {
         resultImg = decodedResponse;
+        resultCap = decodedResponsecaption;
         isLoading = false;
       });
     } finally {
@@ -116,8 +125,8 @@ class _MyHomePageState extends State<MyHomePage> {
             items: categoriesArray,
             itemAsString: (SuperCats? cats) => cats!.name,
             dropdownSearchDecoration: InputDecoration(
-              labelText: "Menu mode",
-              hintText: "country in menu mode",
+              labelText: "Data set label",
+              //hintText: "Select ,
             ),
             onChanged: (List<SuperCats> value){
               print(value.map((e) => e.id).toList());
@@ -134,20 +143,32 @@ class _MyHomePageState extends State<MyHomePage> {
               height: 520,
               child: GridView.builder(
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 200,
-                      childAspectRatio: 3 / 2,
-                      crossAxisSpacing: 20,
-                      mainAxisSpacing: 20),
+                  maxCrossAxisExtent: 200,
+                  childAspectRatio: 3 / 2,
+                  crossAxisSpacing: 20,
+                  mainAxisSpacing: 20),
                   itemCount: 16,
                   shrinkWrap: true,
                   itemBuilder: (BuildContext ctx, index) {
-                    return Container(
-                      alignment: Alignment.center,
-                      //child: Text(resultImg[index]["flickr_url"]),
-                      decoration: BoxDecoration(
-                          color: Colors.amber,
-                          image: DecorationImage(image: NetworkImage(resultImg[index]["coco_url"]), fit: BoxFit.cover),
-                          borderRadius: BorderRadius.circular(15)),
+                    return InkWell(
+                      onTap: (){
+                        Get.defaultDialog(
+                            title: "The Captions",
+                            middleText: resultCap[index]['caption'],
+                            backgroundColor: Colors.teal,
+                            titleStyle: TextStyle(color: Colors.white),
+                            middleTextStyle: TextStyle(color: Colors.white),
+                            radius: 30
+                        );
+                      },
+                      child: Container(
+                        alignment: Alignment.center,
+                        //child: Text(resultImg[index]["flickr_url"]),
+                        decoration: BoxDecoration(
+                            color: Colors.amber,
+                            image: DecorationImage(image: NetworkImage(resultImg[index]["coco_url"]), fit: BoxFit.cover),
+                            borderRadius: BorderRadius.circular(15)),
+                      ),
                     );
                   }),
             ),
